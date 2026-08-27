@@ -42,13 +42,15 @@ export async function requestForecast(
 
 export async function searchLocations(
   query: string,
-  signal: AbortSignal,
+  signal?: AbortSignal,
+  countryCode?: string,
 ): Promise<LocationSuggestion[]> {
   const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
   url.searchParams.set("name", query);
   url.searchParams.set("count", "6");
   url.searchParams.set("language", "uk");
   url.searchParams.set("format", "json");
+  if (countryCode) url.searchParams.set("countryCode", countryCode);
 
   const response = await fetch(url, { signal });
   if (!response.ok) throw new Error("geocoding");
