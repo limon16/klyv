@@ -42,8 +42,8 @@ npm run build
 - `app/fish-model.ts` — видові профілі й розрахунок індексу;
 - `app/globals.css` — адаптивний дизайн;
 - `app/layout.tsx` — метадані й базовий layout;
-- `worker/index.ts`, `vite.config.ts` — поточний локальний vinext runtime.
+- стандартний Next.js App Router — локальний і production runtime.
 
 ## Розгортання
 
-Codex Sites, D1 і Drizzle не використовуються. Код зберігається в персональному GitHub-репозиторії; фінальним етапом запланована міграція runtime на стандартний Next.js і deployment у Vercel.
+Codex Sites, D1 і Drizzle не використовуються. Проєкт працює на стандартному Next.js і розгортається у Vercel з гілки `main`.
