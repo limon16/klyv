@@ -50,7 +50,9 @@ export async function searchLocations(
   url.searchParams.set("count", "6");
   url.searchParams.set("language", "uk");
   url.searchParams.set("format", "json");
-  if (countryCode) url.searchParams.set("countryCode", countryCode);
+  if (countryCode) {
+    url.searchParams.set("countryCode", countryCode.toUpperCase());
+  }
 
   const response = await fetch(url, { signal });
   if (!response.ok) throw new Error("geocoding");

@@ -5,6 +5,24 @@ type IpLocationResponse = {
   location: LocationSuggestion | null;
 };
 
+function distanceKm(
+  origin: LocationSuggestion,
+  candidate: LocationSuggestion,
+) {
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const latitudeDelta = toRadians(candidate.latitude - origin.latitude);
+  const longitudeDelta = toRadians(candidate.longitude - origin.longitude);
+  const originLatitude = toRadians(origin.latitude);
+  const candidateLatitude = toRadians(candidate.latitude);
+  const haversine =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(originLatitude) *
+      Math.cos(candidateLatitude) *
+      Math.sin(longitudeDelta / 2) ** 2;
+
+  return 6371 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+}
+
 export async function requestIpLocation(signal?: AbortSignal) {
   const response = await fetch("/api/ip-location", {
     cache: "no-store",
@@ -26,20 +44,15 @@ export async function requestIpLocation(signal?: AbortSignal) {
     const nearest = localizedLocations.reduce<LocationSuggestion | null>(
       (best, candidate) => {
         if (!best) return candidate;
-
-        const candidateDistance =
-          (candidate.latitude - data.location!.latitude) ** 2 +
-          (candidate.longitude - data.location!.longitude) ** 2;
-        const bestDistance =
-          (best.latitude - data.location!.latitude) ** 2 +
-          (best.longitude - data.location!.longitude) ** 2;
-
-        return candidateDistance < bestDistance ? candidate : best;
+        return distanceKm(data.location!, candidate) <
+          distanceKm(data.location!, best)
+          ? candidate
+          : best;
       },
       null,
     );
 
-    if (nearest) {
+    if (nearest && distanceKm(data.location, nearest) <= 100) {
       return {
         ...data.location,
         name: nearest.name,
