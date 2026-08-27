@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "КЛЬОВ — індекс умов для риболовлі",
-  description: "Погодні умови, вид риби та характеристики водойми — з чесним поясненням оцінки.",
+  description:
+    "Погодні умови, вид риби та характеристики водойми — з чесним поясненням оцінки.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
