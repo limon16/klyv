@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ЩУКА — прогноз кльову",
-  description: "Погода, вітер і тиск для планування риболовлі на щуку.",
+  title: "КЛЬОВ — індекс умов для риболовлі",
+  description: "Погодні умови, вид риби та характеристики водойми — з чесним поясненням оцінки.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
