@@ -17,11 +17,7 @@ export default function Home() {
         editorOpen={planner.locationEditorOpen}
         locationButton={planner.locationButton}
         onRefresh={planner.refreshPage}
-        onToggleLocation={
-          planner.locationEditorOpen
-            ? planner.cancelLocationEdit
-            : planner.editLocation
-        }
+        onToggleLocation={planner.handleHeaderLocationClick}
       />
       <SiteIntro />
       <PlannerCard planner={planner} />

@@ -18,6 +18,7 @@ import {
   type SpeciesId,
   type WaterType,
 } from "../lib/fish-model";
+import { requestIpLocation } from "../lib/ip-location";
 import { requestForecast } from "../lib/open-meteo";
 import {
   clearPlannerState,
@@ -75,6 +76,7 @@ export function useFishingPlanner() {
   const [waterDetailsOpen, setWaterDetailsOpen] = useState(false);
 
   const forecastRequest = useRef(0);
+  const autoLocationCancelled = useRef(false);
   const skipPersistence = useRef(false);
   const locationButton = useRef<HTMLButtonElement>(null);
 
@@ -121,6 +123,7 @@ export function useFishingPlanner() {
 
   const selectCity = useCallback(
     (location: LocationSuggestion) => {
+      autoLocationCancelled.current = true;
       loadForecast(
         location,
         "city",
@@ -142,36 +145,69 @@ export function useFishingPlanner() {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       const saved = readPlannerState();
-      if (!saved || cancelled) {
-        if (!cancelled) setHydrated(true);
-        return;
-      }
+      if (cancelled) return;
 
-      setSpecies(saved.species);
-      setSelectedLocation(saved.location);
-      setActiveLocation(saved.location);
-      setActiveLocationSource(saved.location?.source ?? "city");
-      setLocationMode(
-        saved.location?.source === "city" ? "city" : "coordinates",
-      );
-      locationSearch.setQuery(
-        saved.location?.source === "city" ? saved.location.name : "",
-      );
-      setCoordinateText(
-        saved.location?.source === "coordinates"
-          ? `${saved.location.latitude.toFixed(4)}, ${saved.location.longitude.toFixed(4)}`
-          : "",
-      );
-      setWaterType(saved.water.waterType);
-      setClarity(saved.water.clarity);
-      setFlow(saved.water.flow);
-      setWaterTemperature(saved.water.waterTemperature);
-      setHasStructure(saved.water.hasStructure);
+      if (saved) {
+        setSpecies(saved.species);
+        setSelectedLocation(saved.location);
+        setActiveLocation(saved.location);
+        setActiveLocationSource(saved.location?.source ?? "city");
+        setLocationMode(
+          saved.location?.source === "city" ? "city" : "coordinates",
+        );
+        locationSearch.setQuery(
+          saved.location?.source === "city" ? saved.location.name : "",
+        );
+        setCoordinateText(
+          saved.location?.source === "coordinates"
+            ? `${saved.location.latitude.toFixed(4)}, ${saved.location.longitude.toFixed(4)}`
+            : "",
+        );
+        setWaterType(saved.water.waterType);
+        setClarity(saved.water.clarity);
+        setFlow(saved.water.flow);
+        setWaterTemperature(saved.water.waterTemperature);
+        setHasStructure(saved.water.hasStructure);
+      }
       setHydrated(true);
 
-      if (!saved.location) return;
+      if (!saved?.location) {
+        const forecastVersion = forecastRequest.current;
+        setLocationMode("city");
+        setLocationEditorOpen(true);
+        setStatus("Визначаю приблизне місто…");
+
+        try {
+          const location = await requestIpLocation(controller.signal);
+          if (
+            cancelled ||
+            autoLocationCancelled.current ||
+            forecastRequest.current !== forecastVersion
+          ) {
+            return;
+          }
+
+          if (!location) {
+            setStatus("");
+            return;
+          }
+
+          locationSearch.setQuery(location.name);
+          await loadForecast(
+            location,
+            "city",
+            `${location.name} · приблизно за IP`,
+          );
+        } catch (error) {
+          if ((error as Error).name !== "AbortError" && !cancelled) {
+            setStatus("");
+          }
+        }
+        return;
+      }
 
       setLocationEditorOpen(false);
       const requestId = ++forecastRequest.current;
@@ -196,6 +232,7 @@ export function useFishingPlanner() {
 
     return () => {
       cancelled = true;
+      controller.abort();
       window.clearTimeout(timer);
     };
     // The search setter is stable; hydration intentionally runs once.
@@ -247,6 +284,7 @@ export function useFishingPlanner() {
   );
 
   function useGps() {
+    autoLocationCancelled.current = true;
     if (!navigator.geolocation) {
       setStatus(
         "Цей браузер не підтримує геолокацію. Вставте координати з Compass.",
@@ -279,6 +317,7 @@ export function useFishingPlanner() {
 
   function submitCoordinates(event: FormEvent) {
     event.preventDefault();
+    autoLocationCancelled.current = true;
     const parsed = parseCoordinates(coordinateText);
     if (!parsed) {
       setStatus("Не розпізнав координати. Приклад: 50.4501, 30.5234");
@@ -291,6 +330,7 @@ export function useFishingPlanner() {
   }
 
   function switchLocationMode(mode: LocationMode) {
+    autoLocationCancelled.current = true;
     setLocationMode(mode);
     locationSearch.setShowSuggestions(false);
     setStatus("");
@@ -304,6 +344,7 @@ export function useFishingPlanner() {
   }
 
   function editLocation() {
+    autoLocationCancelled.current = true;
     const mode: LocationMode =
       activeLocationSource === "city" ? "city" : "coordinates";
     setSelectedLocation(activeLocation);
@@ -336,6 +377,28 @@ export function useFishingPlanner() {
     window.setTimeout(() => locationButton.current?.focus(), 0);
   }
 
+  function handleHeaderLocationClick() {
+    autoLocationCancelled.current = true;
+
+    if (!activeLocation) {
+      setLocationEditorOpen(true);
+      setStatus("");
+      window.setTimeout(
+        () =>
+          document
+            .getElementById(
+              locationMode === "city" ? "location-search" : "coordinates",
+            )
+            ?.focus(),
+        0,
+      );
+      return;
+    }
+
+    if (locationEditorOpen) cancelLocationEdit();
+    else editLocation();
+  }
+
   function handleTabKey(event: KeyboardEvent<HTMLButtonElement>) {
     const current = RESULT_TABS.indexOf(tab);
     let next = current;
@@ -363,6 +426,7 @@ export function useFishingPlanner() {
 
   function clearSavedData() {
     ++forecastRequest.current;
+    autoLocationCancelled.current = true;
     skipPersistence.current = true;
     clearPlannerState();
     setSpecies("pike");
@@ -387,6 +451,7 @@ export function useFishingPlanner() {
   }
 
   function changeLocationQuery(value: string) {
+    autoLocationCancelled.current = true;
     locationSearch.changeQuery(value);
     setSelectedLocation(null);
   }
@@ -426,6 +491,7 @@ export function useFishingPlanner() {
     locationSearch: { ...locationSearch, changeQuery: changeLocationQuery },
     editLocation,
     cancelLocationEdit,
+    handleHeaderLocationClick,
     switchLocationMode,
     submitCoordinates,
     useGps,
