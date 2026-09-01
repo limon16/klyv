@@ -4,6 +4,7 @@ import type {
   ForecastHistory,
   WaterSettings,
 } from "../../types/planner";
+import { SmoothHeight } from "../smooth-height";
 
 const WIND_NAMES = [
   "Пн",
@@ -141,8 +142,9 @@ export function ConditionsPanel({
         <strong aria-hidden="true">{waterDetailsOpen ? "−" : "+"}</strong>
       </button>
 
-      {waterDetailsOpen ? (
-        <form className="water-form" id="water-details" onSubmit={applyWater}>
+      <SmoothHeight className="water-details-height">
+        {waterDetailsOpen ? (
+          <form className="water-form" id="water-details" onSubmit={applyWater}>
           <h3>Дані водойми</h3>
           <p>Ці параметри неможливо надійно визначити лише за містом.</p>
           <div className="form-grid">
@@ -241,8 +243,9 @@ export function ConditionsPanel({
               {applyLabel}
             </button>
           </div>
-        </form>
-      ) : null}
+          </form>
+        ) : null}
+      </SmoothHeight>
     </div>
   );
 }

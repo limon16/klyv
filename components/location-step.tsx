@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import type { FishingPlanner } from "../hooks/use-fishing-planner";
 import type { LocationMode, LocationSuggestion } from "../types/planner";
+import { SmoothHeight } from "./smooth-height";
 
 type LocationSearchState = FishingPlanner["locationSearch"];
 
@@ -171,52 +172,54 @@ export function LocationStep({
         ) : null}
       </div>
 
-      {editorOpen ? (
-        <div className="location-panel-body">
-          <div className="location-method-head">
-            <div>
-              <b>
-                {mode === "city"
-                  ? "Місто або найближчий населений пункт"
-                  : "Точна точка водойми"}
-              </b>
-              <span>
-                {mode === "city"
-                  ? "Оберіть населений пункт зі списку."
-                  : "Вставте координати або визначте їх через GPS."}
-              </span>
+      <SmoothHeight className="location-editor-height">
+        {editorOpen ? (
+          <div className="location-panel-body">
+            <div className="location-method-head">
+              <div>
+                <b>
+                  {mode === "city"
+                    ? "Місто або найближчий населений пункт"
+                    : "Точна точка водойми"}
+                </b>
+                <span>
+                  {mode === "city"
+                    ? "Оберіть населений пункт зі списку."
+                    : "Вставте координати або визначте їх через GPS."}
+                </span>
+              </div>
+              <button
+                type="button"
+                aria-controls="location-mode-fields"
+                disabled={loading}
+                onClick={() => onModeChange(alternativeMode)}
+              >
+                {mode === "city" ? "Вказати координати" : "Вказати місто"}
+              </button>
             </div>
-            <button
-              type="button"
-              aria-controls="location-mode-fields"
-              disabled={loading}
-              onClick={() => onModeChange(alternativeMode)}
-            >
-              {mode === "city" ? "Вказати координати" : "Вказати місто"}
-            </button>
-          </div>
 
-          <div id="location-mode-fields">
-            {mode === "city" ? (
-              <CityCombobox search={search} />
-            ) : (
-              <CoordinateInput
-                coordinateText={coordinateText}
-                loading={loading}
-                onCoordinateChange={onCoordinateChange}
-                onGps={onGps}
-                onSubmit={onSubmitCoordinates}
-              />
-            )}
-          </div>
+            <div id="location-mode-fields">
+              {mode === "city" ? (
+                <CityCombobox search={search} />
+              ) : (
+                <CoordinateInput
+                  coordinateText={coordinateText}
+                  loading={loading}
+                  onCoordinateChange={onCoordinateChange}
+                  onGps={onGps}
+                  onSubmit={onSubmitCoordinates}
+                />
+              )}
+            </div>
 
-          {loading || status ? (
-            <p className="status" role="status" aria-live="polite">
-              {loading ? <span className="spinner" /> : null} {status}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+            {loading || status ? (
+              <p className="status" role="status" aria-live="polite">
+                {loading ? <span className="spinner" /> : null} {status}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </SmoothHeight>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { ConditionsPanel } from "./results/conditions-panel";
 import { ForecastPanel } from "./results/forecast-panel";
 import { ResultHeader } from "./results/result-header";
 import { ResultTabs } from "./results/result-tabs";
+import { SmoothHeight } from "./smooth-height";
 
 type ResultCardProps = {
   planner: FishingPlanner;
@@ -32,30 +33,32 @@ export function ResultCard({ planner }: ResultCardProps) {
         onKeyDown={planner.handleTabKey}
       />
 
-      {planner.tab === "forecast" ? (
-        <ForecastPanel
-          dayOffset={planner.dayOffset}
-          windows={planner.view.bestWindows}
-          score={score}
-        />
-      ) : null}
+      <SmoothHeight className="result-panel-height">
+        {planner.tab === "forecast" ? (
+          <ForecastPanel
+            dayOffset={planner.dayOffset}
+            windows={planner.view.bestWindows}
+            score={score}
+          />
+        ) : null}
 
-      {planner.tab === "conditions" ? (
-        <ConditionsPanel
-          history={history}
-          weather={selectedWeather}
-          water={planner.water}
-          waterDetailsOpen={planner.waterDetailsOpen}
-          onApplyWater={planner.applyWaterSettings}
-          onToggleWaterDetails={() =>
-            planner.setWaterDetailsOpen((value) => !value)
-          }
-        />
-      ) : null}
+        {planner.tab === "conditions" ? (
+          <ConditionsPanel
+            history={history}
+            weather={selectedWeather}
+            water={planner.water}
+            waterDetailsOpen={planner.waterDetailsOpen}
+            onApplyWater={planner.applyWaterSettings}
+            onToggleWaterDetails={() =>
+              planner.setWaterDetailsOpen((value) => !value)
+            }
+          />
+        ) : null}
 
-      {planner.tab === "advice" ? (
-        <AdvicePanel score={score} speciesName={speciesName} />
-      ) : null}
+        {planner.tab === "advice" ? (
+          <AdvicePanel score={score} speciesName={speciesName} />
+        ) : null}
+      </SmoothHeight>
     </section>
   );
 }

@@ -3,6 +3,7 @@ import type { FishingPlanner } from "../hooks/use-fishing-planner";
 import type { SpeciesId } from "../lib/fish-model";
 import type { DateChoice } from "../types/planner";
 import { LocationStep } from "./location-step";
+import { SmoothHeight } from "./smooth-height";
 
 type DatePickerProps = {
   choices: DateChoice[];
@@ -69,27 +70,29 @@ function SpeciesPicker({
         </div>
         <p>Оцінка й поради автоматично адаптуються до виду.</p>
       </div>
-      <div className="chips">
-        {species.map((item) => (
+      <SmoothHeight className="species-height">
+        <div className="chips">
+          {species.map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              className={selectedSpecies === item.id ? "chip active" : "chip"}
+              aria-pressed={selectedSpecies === item.id}
+              onClick={() => onSelect(item.id)}
+            >
+              {item.name}
+            </button>
+          ))}
           <button
             type="button"
-            key={item.id}
-            className={selectedSpecies === item.id ? "chip active" : "chip"}
-            aria-pressed={selectedSpecies === item.id}
-            onClick={() => onSelect(item.id)}
+            className="chip more"
+            aria-expanded={showAll}
+            onClick={() => onToggleAll((value) => !value)}
           >
-            {item.name}
+            {showAll ? "Менше" : "Усі види · +4"}
           </button>
-        ))}
-        <button
-          type="button"
-          className="chip more"
-          aria-expanded={showAll}
-          onClick={() => onToggleAll((value) => !value)}
-        >
-          {showAll ? "Менше" : "Усі види · +4"}
-        </button>
-      </div>
+        </div>
+      </SmoothHeight>
     </>
   );
 }
