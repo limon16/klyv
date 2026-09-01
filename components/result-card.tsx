@@ -46,14 +46,10 @@ export function ResultCard({ planner }: ResultCardProps) {
           weather={selectedWeather}
           water={planner.water}
           waterDetailsOpen={planner.waterDetailsOpen}
-          onClarityChange={planner.setClarity}
-          onFlowChange={planner.setFlow}
-          onHasStructureChange={planner.setHasStructure}
+          onApplyWater={planner.applyWaterSettings}
           onToggleWaterDetails={() =>
             planner.setWaterDetailsOpen((value) => !value)
           }
-          onWaterTemperatureChange={planner.setWaterTemperature}
-          onWaterTypeChange={planner.setWaterType}
         />
       ) : null}
 

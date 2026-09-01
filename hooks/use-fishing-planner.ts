@@ -450,6 +450,14 @@ export function useFishingPlanner() {
     setStatus("");
   }
 
+  function applyWaterSettings(nextWater: WaterSettings) {
+    setWaterType(nextWater.waterType);
+    setClarity(nextWater.clarity);
+    setFlow(nextWater.flow);
+    setWaterTemperature(nextWater.waterTemperature);
+    setHasStructure(nextWater.hasStructure);
+  }
+
   function changeLocationQuery(value: string) {
     autoLocationCancelled.current = true;
     locationSearch.changeQuery(value);
@@ -504,11 +512,7 @@ export function useFishingPlanner() {
     loading,
     status,
     water,
-    setWaterType,
-    setClarity,
-    setFlow,
-    setWaterTemperature,
-    setHasStructure,
+    applyWaterSettings,
     waterDetailsOpen,
     setWaterDetailsOpen,
     view,

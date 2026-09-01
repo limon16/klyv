@@ -1,20 +1,48 @@
-import type { FishingPlanner } from "../../hooks/use-fishing-planner";
-import type { Clarity, Flow, WaterType } from "../../lib/fish-model";
-import type { CurrentWeather, ForecastHistory } from "../../types/planner";
+import { type FormEvent, useState } from "react";
+import type {
+  CurrentWeather,
+  ForecastHistory,
+  WaterSettings,
+} from "../../types/planner";
 
-const WIND_NAMES = ["Пн", "Пн-Сх", "Сх", "Пд-Сх", "Пд", "Пд-Зх", "Зх", "Пн-Зх"];
+const WIND_NAMES = [
+  "Пн",
+  "Пн-Сх",
+  "Сх",
+  "Пд-Сх",
+  "Пд",
+  "Пд-Зх",
+  "Зх",
+  "Пн-Зх",
+];
+
+function waterSettingsEqual(first: WaterSettings, second: WaterSettings) {
+  return (
+    first.waterType === second.waterType &&
+    first.clarity === second.clarity &&
+    first.flow === second.flow &&
+    first.waterTemperature === second.waterTemperature &&
+    first.hasStructure === second.hasStructure
+  );
+}
+
+function hasWaterData(water: WaterSettings) {
+  return (
+    water.waterType !== "unknown" ||
+    water.clarity !== "unknown" ||
+    water.flow !== "unknown" ||
+    water.waterTemperature !== "" ||
+    water.hasStructure
+  );
+}
 
 type ConditionsPanelProps = {
   history: ForecastHistory;
   weather: CurrentWeather;
-  water: FishingPlanner["water"];
+  water: WaterSettings;
   waterDetailsOpen: boolean;
-  onClarityChange: (value: Clarity) => void;
-  onFlowChange: (value: Flow) => void;
-  onHasStructureChange: (value: boolean) => void;
+  onApplyWater: (water: WaterSettings) => void;
   onToggleWaterDetails: () => void;
-  onWaterTemperatureChange: (value: string) => void;
-  onWaterTypeChange: (value: WaterType) => void;
 };
 
 export function ConditionsPanel({
@@ -22,15 +50,44 @@ export function ConditionsPanel({
   weather,
   water,
   waterDetailsOpen,
-  onClarityChange,
-  onFlowChange,
-  onHasStructureChange,
+  onApplyWater,
   onToggleWaterDetails,
-  onWaterTemperatureChange,
-  onWaterTypeChange,
 }: ConditionsPanelProps) {
+  const [draftWater, setDraftWater] = useState<WaterSettings>(water);
+  const [didApply, setDidApply] = useState(false);
   const windDirection =
     WIND_NAMES[Math.round(weather.wind_direction_10m / 45) % 8];
+  const hasChanges = !waterSettingsEqual(draftWater, water);
+  const hasAppliedData = hasWaterData(water);
+
+  function updateDraft<Key extends keyof WaterSettings>(
+    key: Key,
+    value: WaterSettings[Key],
+  ) {
+    setDraftWater((current) => ({ ...current, [key]: value }));
+    setDidApply(false);
+  }
+
+  function applyWater(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!hasChanges) return;
+
+    onApplyWater(draftWater);
+    setDidApply(true);
+  }
+
+  const formStatus = hasChanges
+    ? "Є незастосовані зміни"
+    : didApply
+      ? "Зміни застосовано до прогнозу"
+      : hasAppliedData
+        ? "Ці дані вже враховані у прогнозі"
+        : "Заповніть хоча б одне поле, щоб уточнити прогноз";
+  const applyLabel = hasChanges
+    ? "Застосувати зміни"
+    : didApply || hasAppliedData
+      ? "Застосовано"
+      : "Застосувати";
 
   return (
     <div
@@ -85,16 +142,19 @@ export function ConditionsPanel({
       </button>
 
       {waterDetailsOpen ? (
-        <div className="water-form" id="water-details">
+        <form className="water-form" id="water-details" onSubmit={applyWater}>
           <h3>Дані водойми</h3>
           <p>Ці параметри неможливо надійно визначити лише за містом.</p>
           <div className="form-grid">
             <label>
               Тип водойми
               <select
-                value={water.waterType}
+                value={draftWater.waterType}
                 onChange={(event) =>
-                  onWaterTypeChange(event.target.value as WaterType)
+                  updateDraft(
+                    "waterType",
+                    event.target.value as WaterSettings["waterType"],
+                  )
                 }
               >
                 <option value="unknown">Не знаю</option>
@@ -107,9 +167,12 @@ export function ConditionsPanel({
             <label>
               Прозорість
               <select
-                value={water.clarity}
+                value={draftWater.clarity}
                 onChange={(event) =>
-                  onClarityChange(event.target.value as Clarity)
+                  updateDraft(
+                    "clarity",
+                    event.target.value as WaterSettings["clarity"],
+                  )
                 }
               >
                 <option value="unknown">Не знаю</option>
@@ -121,8 +184,13 @@ export function ConditionsPanel({
             <label>
               Течія
               <select
-                value={water.flow}
-                onChange={(event) => onFlowChange(event.target.value as Flow)}
+                value={draftWater.flow}
+                onChange={(event) =>
+                  updateDraft(
+                    "flow",
+                    event.target.value as WaterSettings["flow"],
+                  )
+                }
               >
                 <option value="unknown">Не знаю</option>
                 <option value="still">Немає</option>
@@ -138,9 +206,9 @@ export function ConditionsPanel({
                 min="0"
                 max="35"
                 step="0.5"
-                value={water.waterTemperature}
+                value={draftWater.waterTemperature}
                 onChange={(event) =>
-                  onWaterTemperatureChange(event.target.value)
+                  updateDraft("waterTemperature", event.target.value)
                 }
                 placeholder="необов’язково"
               />
@@ -149,12 +217,31 @@ export function ConditionsPanel({
           <label className="check">
             <input
               type="checkbox"
-              checked={water.hasStructure}
-              onChange={(event) => onHasStructureChange(event.target.checked)}
+              checked={draftWater.hasStructure}
+              onChange={(event) =>
+                updateDraft("hasStructure", event.target.checked)
+              }
             />
             Є трава, бровка, корчі або інше укриття
           </label>
-        </div>
+
+          <div className="water-form-actions">
+            <p
+              className={hasChanges ? "water-form-status pending" : "water-form-status"}
+              role="status"
+              aria-live="polite"
+            >
+              {formStatus}
+            </p>
+            <button
+              type="submit"
+              className="water-apply"
+              disabled={!hasChanges}
+            >
+              {applyLabel}
+            </button>
+          </div>
+        </form>
       ) : null}
     </div>
   );
